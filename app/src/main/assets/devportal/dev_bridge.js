@@ -42,7 +42,7 @@ class RemoteObject {
                         return remoteCall(me.__id, methodName, Array.from(arguments));
                     }
                     catch(ex) {
-                        if(ex.indexOf("[400]") > 0 && ex.indexOf("does not exist") > 0 && ex.indexOf(me.__id) > 0) {
+                        if(ex.indexOf && ex.indexOf("[400]") > 0 && ex.indexOf("does not exist") > 0 && ex.indexOf(me.__id) > 0) {
                             deletePackage(me.__id);
                         }
                         else throw ex;
@@ -61,7 +61,7 @@ class RemoteObject {
                             return remoteProp(me.__id, propName);
                         }
                         catch(ex) {
-                            if(ex.indexOf("[400]") > 0 && ex.indexOf("does not exist") > 0 && ex.indexOf(me.__id) > 0) {
+                            if(ex.indexOf && ex.indexOf("[400]") > 0 && ex.indexOf("does not exist") > 0 && ex.indexOf(me.__id) > 0) {
                                 deletePackage(me.__id);
                             }
                             else throw ex;
