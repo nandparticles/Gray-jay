@@ -29,6 +29,7 @@ import com.futo.platformplayer.engine.internal.V8Converter
 import com.futo.platformplayer.engine.packages.PackageBridge
 import com.futo.platformplayer.engine.packages.PackageDOMParser
 import com.futo.platformplayer.engine.packages.PackageHttp
+import com.futo.platformplayer.engine.packages.PackageHttpPromises
 import com.futo.platformplayer.engine.packages.PackageUtilities
 import com.futo.platformplayer.engine.packages.V8Package
 import com.futo.platformplayer.getOrThrow
@@ -239,6 +240,7 @@ class V8Plugin {
         return when(packageName) {
             "DOMParser" -> PackageDOMParser(this)
             "Http" -> PackageHttp(this, config)
+            "HttpPromises" -> PackageHttpPromises(this, config)
             "Utilities" -> PackageUtilities(this, config)
             else -> throw ScriptCompilationException(config, "Unknown package [${packageName}] required for plugin ${config.name}");
         };
