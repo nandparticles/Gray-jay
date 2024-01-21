@@ -1,7 +1,5 @@
 package com.futo.platformplayer.api.media.platforms.js.models.sources
 
-import androidx.media3.datasource.DefaultHttpDataSource
-import androidx.media3.datasource.HttpDataSource
 import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.models.modifier.AdhocRequestModifier
@@ -15,7 +13,6 @@ import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.orNull
-import com.futo.platformplayer.views.video.datasources.JSHttpDataSource
 
 abstract class JSSource {
     protected val _plugin: JSClient;
@@ -33,15 +30,15 @@ abstract class JSSource {
         this.type = type;
 
         _requestModifier = obj.getOrDefault<V8ValueObject>(_config, "requestModifier", "JSSource.requestModifier", null)?.let {
-            JSRequest(plugin, it, null, null, true);
+            JSRequest(plugin, it, null, null, null, null, true);
         }
         hasRequestModifier = _requestModifier != null || obj.has("getRequestModifier");
     }
 
     fun getRequestModifier(): IRequestModifier? {
         if(_requestModifier != null)
-            return AdhocRequestModifier { url, headers ->
-                  return@AdhocRequestModifier _requestModifier.modify(_plugin, url, headers);
+            return AdhocRequestModifier { url, headers, method, body ->
+                  return@AdhocRequestModifier _requestModifier.modify(_plugin, url, headers, method, body);
             };
 
         if (!hasRequestModifier || _obj.isClosed) {

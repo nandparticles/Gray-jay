@@ -6,11 +6,13 @@ import static androidx.media3.datasource.HttpUtil.buildRangeRequestHeader;
 import static java.lang.Math.min;
 
 import android.net.Uri;
+import android.util.Base64;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import com.futo.platformplayer.api.http.ManagedHttpClient;
 import com.futo.platformplayer.api.media.models.modifier.IRequest;
 import com.futo.platformplayer.api.media.models.modifier.IRequestModifier;
 import com.futo.platformplayer.api.media.platforms.js.models.JSRequestModifier;
@@ -24,6 +26,7 @@ import androidx.media3.datasource.DataSpec;
 import androidx.media3.datasource.HttpDataSource;
 import androidx.media3.datasource.HttpUtil;
 import androidx.media3.datasource.TransferListener;
+import androidx.work.impl.utils.PackageManagerHelper;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.ForwardingMap;
@@ -39,11 +42,15 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.NoRouteToHostException;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
+
+import okhttp3.OkHttpClient;
 
 /*
  * Based on the default ExoPlayer DefaultHttpDataSource
@@ -315,6 +322,12 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
             responseMessage = connection.getResponseMessage();
         } catch (IOException e) {
             closeConnectionQuietly();
+            Log.e(TAG, "Failed to open: " + dataSpec.uri, e);
+
+            ManagedHttpClient client = new ManagedHttpClient(new OkHttpClient.Builder());
+            ManagedHttpClient.Response response = client.head(dataSpec.uri.toString(), new HashMap<>());
+            Log.i(TAG, "ManagedHttpClient response code: " + response.getCode());
+
             throw HttpDataSourceException.createForIOException(
                     e, dataSpec, HttpDataSourceException.TYPE_OPEN);
         }
@@ -574,12 +587,26 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
 
         requestHeaders.put(HttpHeaders.ACCEPT_ENCODING, allowGzip ? "gzip" : "identity");
 
+        String requestMethod = DataSpec.getStringForHttpMethod(httpMethod);
         String requestUrl = url.toString();
         if (requestModifier != null) {
-            IRequest result = requestModifier.modifyRequest(requestUrl, requestHeaders);
+            IRequest result = requestModifier.modifyRequest(requestUrl, requestHeaders, requestMethod, httpBody != null ? new String(httpBody, StandardCharsets.UTF_8) : null);
+
             String modifiedUrl = result.getUrl();
-            requestUrl = (modifiedUrl != null) ? modifiedUrl : requestUrl;
-            requestHeaders = result.getHeaders();
+            if (modifiedUrl != null)
+                requestUrl = modifiedUrl;
+
+            Map<String, String> modifiedHeaders = result.getHeaders();
+            if (modifiedHeaders != null)
+                requestHeaders = modifiedHeaders;
+
+            String modifiedMethod = result.getMethod();
+            if (modifiedMethod != null)
+                requestMethod = modifiedMethod;
+
+            String modifiedBody = result.getBody();
+            if (modifiedBody != null)
+                httpBody = modifiedBody.getBytes(StandardCharsets.UTF_8);
         }
 
         HttpURLConnection connection = openConnection(new URL(requestUrl));
@@ -592,7 +619,7 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
 
         connection.setInstanceFollowRedirects(followRedirects);
         connection.setDoOutput(httpBody != null);
-        connection.setRequestMethod(DataSpec.getStringForHttpMethod(httpMethod));
+        connection.setRequestMethod(requestMethod);
 
         if (httpBody != null) {
             connection.setFixedLengthStreamingMode(httpBody.length);

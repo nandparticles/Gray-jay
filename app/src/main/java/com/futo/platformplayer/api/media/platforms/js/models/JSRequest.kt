@@ -12,31 +12,40 @@ import com.futo.platformplayer.getOrDefault
 class JSRequest : IRequest {
     private val _v8Url: String?;
     private val _v8Headers: Map<String, String>?;
+    private val _v8Method: String?;
+    private val _v8Body: String?;
     private val _v8Options: Options?;
 
     override var url: String? = null;
     override lateinit var headers: Map<String, String>;
+    override var method: String? = null;
+    override var body: String? = null;
 
-    constructor(plugin: JSClient, url: String?, headers: Map<String, String>?, options: Options?, originalUrl: String?, originalHeaders: Map<String, String>?) {
+    constructor(plugin: JSClient, url: String?, headers: Map<String, String>?, method: String?, body: String?, options: Options?, originalUrl: String?, originalHeaders: Map<String, String>?, originalMethod: String?, originalBody: String?) {
         _v8Url = url;
         _v8Headers = headers;
+        _v8Method = method;
+        _v8Body = body;
         _v8Options = options;
-        initialize(plugin, originalUrl, originalHeaders);
+        initialize(plugin, originalUrl, originalHeaders, originalMethod, originalBody);
     }
-    constructor(plugin: JSClient, obj: V8ValueObject, originalUrl: String?, originalHeaders: Map<String, String>?, applyOtherHeadersByDefault: Boolean = false) {
+    constructor(plugin: JSClient, obj: V8ValueObject, originalUrl: String?, originalHeaders: Map<String, String>?, originalMethod: String?, originalBody: String?, applyOtherHeadersByDefault: Boolean = false) {
         val contextName = "ModifyRequestResponse";
         val config = plugin.config;
         _v8Url = obj.getOrDefault<String>(config, "url", contextName, null);
         _v8Headers = obj.getOrDefault<Map<String, String>>(config, "headers", contextName, null);
+        _v8Method = obj.getOrDefault<String>(config, "method", contextName, null);
+        _v8Body = obj.getOrDefault<String>(config, "body", contextName, null);
         _v8Options = obj.getOrDefault<V8ValueObject>(config, "options", "JSRequestModifier.options", null)?.let {
             Options(config, it, applyOtherHeadersByDefault);
         } ?: Options(null, null, applyOtherHeadersByDefault);
-        initialize(plugin, originalUrl, originalHeaders);
+        initialize(plugin, originalUrl, originalHeaders, originalMethod, originalBody);
     }
 
-    private fun initialize(plugin: JSClient, originalUrl: String?, originalHeaders: Map<String, String>?) {
-        val config = plugin.config;
+    private fun initialize(plugin: JSClient, originalUrl: String?, originalHeaders: Map<String, String>?, originalMethod: String?, originalBody: String?) {
         url = _v8Url ?: originalUrl;
+        method = _v8Method ?: originalMethod;
+        body = _v8Body ?: originalBody;
 
         if(_v8Options?.applyOtherHeaders ?: false) {
             val headersToSet = _v8Headers?.toMutableMap() ?: mutableMapOf();
@@ -69,8 +78,8 @@ class JSRequest : IRequest {
         }
     }
 
-    fun modify(plugin: JSClient, originalUrl: String?, originalHeaders: Map<String, String>?): JSRequest {
-        return JSRequest(plugin, _v8Url, _v8Headers, _v8Options, originalUrl, originalHeaders);
+    fun modify(plugin: JSClient, originalUrl: String?, originalHeaders: Map<String, String>?, originalMethod: String?, originalBody: String?): JSRequest {
+        return JSRequest(plugin, _v8Url, _v8Headers, _v8Method, _v8Body, _v8Options, originalUrl, originalHeaders, originalMethod, originalBody);
     }
 
 

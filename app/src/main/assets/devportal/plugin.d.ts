@@ -243,7 +243,9 @@ declare class DashSource implements IVideoSource {
 
 declare interface IRequest {
     url: string,
-    headers: Map<string, string>
+    headers: Map<string, string>,
+    method: string,
+    body?: string
 }
 declare interface IRequestModifierDef {
     allowByteSkip: boolean
@@ -251,7 +253,7 @@ declare interface IRequestModifierDef {
 declare class RequestModifier {
     constructor(obj: IRequestModifierDef) { }
 
-    modifyRequest(url: string, headers: Map<string, string>): IRequest;
+    modifyRequest(url: string, headers: Map<string, string>, method: string, body?: string): IRequest;
 }
 
 //Channel
