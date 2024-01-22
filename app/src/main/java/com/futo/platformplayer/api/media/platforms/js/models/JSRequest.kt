@@ -13,14 +13,20 @@ class JSRequest : IRequest {
     private val _v8Url: String?;
     private val _v8Headers: Map<String, String>?;
     private val _v8Options: Options?;
+    private val _v8Method: String?;
+    private val _v8Body: String?;
 
     override var url: String? = null;
     override lateinit var headers: Map<String, String>;
+    override var method: String? = null;
+    override var body: String? = null;
 
-    constructor(plugin: JSClient, url: String?, headers: Map<String, String>?, options: Options?, originalUrl: String?, originalHeaders: Map<String, String>?) {
+    constructor(plugin: JSClient, url: String?, headers: Map<String, String>?, method: String?, body: String? = null, options: Options?, originalUrl: String?, originalHeaders: Map<String, String>?) {
         _v8Url = url;
         _v8Headers = headers;
         _v8Options = options;
+        _v8Method = method;
+        _v8Body = body;
         initialize(plugin, originalUrl, originalHeaders);
     }
     constructor(plugin: JSClient, obj: V8ValueObject, originalUrl: String?, originalHeaders: Map<String, String>?, applyOtherHeadersByDefault: Boolean = false) {
@@ -31,12 +37,17 @@ class JSRequest : IRequest {
         _v8Options = obj.getOrDefault<V8ValueObject>(config, "options", "JSRequestModifier.options", null)?.let {
             Options(config, it, applyOtherHeadersByDefault);
         } ?: Options(null, null, applyOtherHeadersByDefault);
+        _v8Method = obj.getOrDefault<String>(config, "method", contextName, null);
+        _v8Body = obj.getOrDefault<String>(config, "body", contextName, null);
+
         initialize(plugin, originalUrl, originalHeaders);
     }
 
     private fun initialize(plugin: JSClient, originalUrl: String?, originalHeaders: Map<String, String>?) {
         val config = plugin.config;
         url = _v8Url ?: originalUrl;
+        method = _v8Method;
+        body = _v8Body;
 
         if(_v8Options?.applyOtherHeaders ?: false) {
             val headersToSet = _v8Headers?.toMutableMap() ?: mutableMapOf();
@@ -70,7 +81,7 @@ class JSRequest : IRequest {
     }
 
     fun modify(plugin: JSClient, originalUrl: String?, originalHeaders: Map<String, String>?): JSRequest {
-        return JSRequest(plugin, _v8Url, _v8Headers, _v8Options, originalUrl, originalHeaders);
+        return JSRequest(plugin, _v8Url, _v8Headers, _v8Method, _v8Body, _v8Options, originalUrl, originalHeaders);
     }
 
 

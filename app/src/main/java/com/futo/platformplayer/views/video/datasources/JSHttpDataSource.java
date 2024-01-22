@@ -39,6 +39,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.NoRouteToHostException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -574,12 +575,25 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
 
         requestHeaders.put(HttpHeaders.ACCEPT_ENCODING, allowGzip ? "gzip" : "identity");
 
+        String requestMethod = DataSpec.getStringForHttpMethod(httpMethod);
         String requestUrl = url.toString();
         if (requestModifier != null) {
             IRequest result = requestModifier.modifyRequest(requestUrl, requestHeaders);
             String modifiedUrl = result.getUrl();
-            requestUrl = (modifiedUrl != null) ? modifiedUrl : requestUrl;
-            requestHeaders = result.getHeaders();
+            if (modifiedUrl != null)
+                requestUrl = modifiedUrl;
+
+            Map<String, String> modifiedHeaders = result.getHeaders();
+            if (modifiedHeaders != null)
+                requestHeaders = modifiedHeaders;
+
+            String modifiedMethod = result.getMethod();
+            if (modifiedMethod != null)
+                requestMethod = modifiedMethod;
+
+            String modifiedBody = result.getBody();
+            if (modifiedBody != null)
+                httpBody = modifiedBody.getBytes(StandardCharsets.UTF_8);
         }
 
         HttpURLConnection connection = openConnection(new URL(requestUrl));
@@ -592,7 +606,7 @@ public class JSHttpDataSource extends BaseDataSource implements HttpDataSource {
 
         connection.setInstanceFollowRedirects(followRedirects);
         connection.setDoOutput(httpBody != null);
-        connection.setRequestMethod(DataSpec.getStringForHttpMethod(httpMethod));
+        connection.setRequestMethod(requestMethod);
 
         if (httpBody != null) {
             connection.setFixedLengthStreamingMode(httpBody.length);

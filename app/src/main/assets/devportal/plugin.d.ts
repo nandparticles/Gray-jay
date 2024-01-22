@@ -243,7 +243,9 @@ declare class DashSource implements IVideoSource {
 
 declare interface IRequest {
     url: string,
-    headers: Map<string, string>
+    headers: Map<string, string>?,
+    method: string?,
+    body: string?
 }
 declare interface IRequestModifierDef {
     allowByteSkip: boolean
