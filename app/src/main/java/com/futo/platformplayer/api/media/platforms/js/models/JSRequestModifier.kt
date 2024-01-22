@@ -45,5 +45,8 @@ class JSRequestModifier: IRequestModifier {
     }
 
 
-    data class Request(override val url: String, override val headers: Map<String, String>) : IRequest;
+    data class Request(override val url: String,
+                       override val headers: Map<String, String>,
+                       override val method: String? = null,
+                       override val body: String? = null) : IRequest;
 }
